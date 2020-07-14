@@ -1,0 +1,154 @@
+diff --git a/Dockerfile.amd64 b/Dockerfile.amd64
+index bc95712..8f250cf 100644
+--- a/Dockerfile.amd64
++++ b/Dockerfile.amd64
+@@ -1,4 +1,4 @@
+-# Built with arch: amd64 flavor: mate image: ubuntu:18.04
++# Built with arch: amd64 flavor: lxde image: ubuntu:18.04
+ #
+ ################################################################################
+ # base system
+@@ -7,8 +7,10 @@
+ FROM ubuntu:18.04 as system
+ 
+ 
++
+ RUN sed -i 's#http://archive.ubuntu.com/ubuntu/#mirror://mirrors.ubuntu.com/mirrors.txt#' /etc/apt/sources.list;
+ 
++
+ # built-in packages
+ ENV DEBIAN_FRONTEND noninteractive
+ RUN apt update \
+@@ -33,12 +35,13 @@ RUN add-apt-repository -y ppa:fcwu-tw/apps \
+     && rm -rf /var/lib/apt/lists/*
+ 
+ RUN apt update \
+-    && apt install -y --allow-unauthenticated \
+-        ubuntu-mate-desktop \
++    && apt install -y --no-install-recommends --allow-unauthenticated \
++        lxde gtk2-engines-murrine gnome-themes-standard gtk2-engines-pixbuf gtk2-engines-murrine arc-theme \
+     && apt autoclean -y \
+     && apt autoremove -y \
+     && rm -rf /var/lib/apt/lists/*
+ 
++
+ # Additional packages require ~600MB
+ # libreoffice  pinta language-pack-zh-hant language-pack-gnome-zh-hant firefox-locale-zh-hant libreoffice-l10n-zh-tw
+ 
+@@ -82,7 +85,7 @@ RUN apt-get update \
+     && apt-get install -y --no-install-recommends curl ca-certificates gnupg patch
+ 
+ # nodejs
+-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - \
++RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
+     && apt-get install -y nodejs
+ 
+ # yarn
+diff --git a/Dockerfile.j2 b/Dockerfile.j2
+index ed7c9ad..5c9039a 100644
+--- a/Dockerfile.j2
++++ b/Dockerfile.j2
+@@ -68,14 +68,6 @@ RUN apt update \
+     && apt autoremove -y \
+     && rm -rf /var/lib/apt/lists/*
+ {%endif%}
+-{%if desktop == "mate" %}
+-RUN apt update \
+-    && apt install -y --allow-unauthenticated \
+-        ubuntu-mate-desktop \
+-    && apt autoclean -y \
+-    && apt autoremove -y \
+-    && rm -rf /var/lib/apt/lists/*
+-{%endif%}
+ # Additional packages require ~600MB
+ # libreoffice  pinta language-pack-zh-hant language-pack-gnome-zh-hant firefox-locale-zh-hant libreoffice-l10n-zh-tw
+ 
+@@ -120,7 +112,7 @@ RUN apt-get update \
+     && apt-get install -y --no-install-recommends curl ca-certificates gnupg patch
+ 
+ # nodejs
+-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - \
++RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
+     && apt-get install -y nodejs
+ 
+ # yarn
+diff --git a/flavors/mate.yml b/flavors/mate.yml
+deleted file mode 100644
+index 18614ea..0000000
+--- a/flavors/mate.yml
++++ /dev/null
+@@ -1,5 +0,0 @@
+----
+-addon_packages:
+-  - vim
+-  - firefox
+-desktop: mate
+\ No newline at end of file
+diff --git a/rootfs/etc/supervisor/conf.d/supervisord.conf b/rootfs/etc/supervisor/conf.d/supervisord.conf
+index 4bf9501..1232efa 100644
+--- a/rootfs/etc/supervisor/conf.d/supervisord.conf
++++ b/rootfs/etc/supervisor/conf.d/supervisord.conf
+@@ -19,15 +19,30 @@ stderr_logfile_maxbytes=0
+ 
+ 
+ [group:x]
+-programs=xvfb,x11vnc,lxpanel,novnc
++programs=xvfb,wm,lxpanel,pcmanfm,x11vnc,novnc
++
++[program:wm]
++priority=15
++command=/usr/bin/openbox
++environment=DISPLAY=":1",HOME="/root",USER="root"
+ 
+ [program:lxpanel]
+ priority=15
+ directory=%HOME%
+-command=/usr/bin/mate-session
++command=/usr/bin/lxpanel --profile LXDE
+ user=%USER%
+ environment=DISPLAY=":1",HOME="%HOME%",USER="%USER%"
+-[program:lxpanel]
++
++[program:pcmanfm]
++priority=15
++directory=%HOME%
++command=/usr/bin/pcmanfm --desktop --profile LXDE
++user=%USER%
++environment=DISPLAY=":1",HOME="%HOME%",USER="%USER%"
++
++
++
++
+ 
+ 
+ [program:xvfb]
+diff --git a/rootfs/etc/supervisor/conf.d/supervisord.conf.j2 b/rootfs/etc/supervisor/conf.d/supervisord.conf.j2
+index 6911069..36befd5 100644
+--- a/rootfs/etc/supervisor/conf.d/supervisord.conf.j2
++++ b/rootfs/etc/supervisor/conf.d/supervisord.conf.j2
+@@ -70,18 +70,6 @@ user=%USER%
+ environment=DISPLAY=":1",HOME="%HOME%",USER="%USER%"
+ {% endif %}
+ 
+-{% if desktop == "mate" %}
+-[group:x]
+-programs=xvfb,lxpanel,x11vnc,novnc
+-
+-[program:lxpanel]
+-priority=15
+-directory=%HOME%
+-command=/usr/bin/mate-session
+-user=%USER%
+-environment=DISPLAY=":1",HOME="%HOME%",USER="%USER%"
+-{% endif %}
+-
+ [program:xvfb]
+ priority=10
+ command=/usr/local/bin/xvfb.sh
+@@ -95,4 +83,4 @@ command=x11vnc -display :1 -xkb -forever -shared -repeat -capslock
+ priority=25
+ directory=/usr/local/lib/web/frontend/static/novnc
+ command=bash /usr/local/lib/web/frontend/static/novnc/utils/launch.sh --listen 6081
+-stopasgroup=true
+\ No newline at end of file
++stopasgroup=true

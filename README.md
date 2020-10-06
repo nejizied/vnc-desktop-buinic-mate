@@ -14,8 +14,7 @@ docker build -t vnc-desktop-bionic:mate .
 
 then you can run it using the simple bash script in the repository.
 
-https://drive.google.com/file/d/1ngo99tmhG9umtL2b8xbXhchs0FFKURi1/view?usp=sharing
-
+https://drive.google.com/file/d/1X82L9QcL4bqf8c_zM8vxL7qt9r1Jjtsk/view?usp=sharing
 ### Run docker command
 
 Or you can simply run the following command:
